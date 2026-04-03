@@ -23,6 +23,10 @@ class Product:
     def get_total_price(self):
         return self.price * self.quantity
 
+    def apply_discount(self, discount):
+        if discount < 0 or discount > 100:
+            raise ValidationError("Скидка не может быть меньше 0 или больше 100")
+        self.price = self.price * (1 - discount / 100)
 
     def __str__(self):
         return f"Товар: {self.name}, Цена: {self.price} руб. Количество: {self.quantity} "
