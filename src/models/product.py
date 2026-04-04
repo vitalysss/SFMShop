@@ -23,6 +23,14 @@ class Product:
     def get_total_price(self):
         return self.price * self.quantity
 
+    def update_stock(self, new_quantity):
+        if new_quantity < 0:
+            raise ValidationError("Количество не может быть отрицательным")
+        self.quantity = new_quantity
+
+    def check_stock(self):
+        return self.quantity
+
     def apply_discount(self, discount):
         if discount < 0 or discount > 100:
             raise ValidationError("Скидка не может быть меньше 0 или больше 100")
