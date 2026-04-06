@@ -28,6 +28,19 @@ class Product:
             raise ValidationError("Скидка не может быть меньше 0 или больше 100")
         self.price = self.price * (1 - discount / 100)
 
+    def calculate_shipping(self):
+        base_cost_delivery = 300
+        if self.quantity > 1:
+            surcharge = (self.quantity - 1) * 20
+            base_cost_delivery += surcharge
+        return base_cost_delivery
+
+    def get_category(self):
+        if self.price < 1500:
+            return "Бюджетный"
+        return "Премиальный"
+
+
     def __str__(self):
         return f"Товар: {self.name}, Цена: {self.price} руб. Количество: {self.quantity} "
 
