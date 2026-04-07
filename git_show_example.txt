@@ -1,0 +1,20 @@
+commit 8b9502255488e519718cabb4c919782927d12162
+Author: Vitaly <wambleoo@gmail.com>
+Date:   Tue Apr 7 12:29:02 2026 +0300
+
+    Добавлен метод log_error в logger
+
+diff --git a/src/utils/logger.py b/src/utils/logger.py
+index 8ae63e2..851d213 100644
+--- a/src/utils/logger.py
++++ b/src/utils/logger.py
+@@ -1,2 +1,6 @@
+ def log_info(message):
+-    return f"[INFO] {message}"
+\ No newline at end of file
++    return f"[INFO] {message}"
++
++
++def log_error(message):
++    return f"[ERROR] {message}"
+\ No newline at end of file
