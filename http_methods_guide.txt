@@ -1,0 +1,172 @@
+1. Получение списка товаров
+
+Метод: GET
+Путь: /products
+Успешный статус: 200 OK
+Пример запроса:
+GET /products
+Host:sfmshop.com
+Accept: application/json
+Пример ответа:
+HTTP/1.1 200 OK
+Content-Type: application/json
+[
+  {
+    "id": 1,
+    "name": "Ноутбук",
+    "price": 50000,
+    "quantity": 10
+  },
+  {
+    "id": 2,
+    "name": "Мышь",
+    "price": 1500,
+    "quantity": 25
+  }
+]
+
+
+2. Получение товара по ID
+
+Метод: GET
+Путь: /products/{id}
+Успешный статус: 200 OK
+Ошибки:
+400 Bad Request - некорректный ID товара
+404 Not Found - товар с таким ID не найден
+500 Internal Server Error - ошибка сервера
+Пример запроса:
+GET /products/3 HTTP/1.1
+Accept: application/json
+Пример ответа: 200 OK
+  {
+    "id": 3,
+    "name": "Клавиатура",
+    "price": 5000,
+    "quantity": 6
+  }
+
+3. Создание нового заказа
+
+Метод: POST
+Путь: /orders
+Тело запроса:
+  {
+    "user_id": 3,
+    "product_id": 2,
+    "quantity": 4
+  }
+Успешный статус: 201 Created
+Ошибки:
+400 Bad request
+500 Internal server error
+404 Not Found
+Пример запроса:
+POST /orders HTTP/1.1
+Content-Type: application/json
+  {
+    "user_id": 3,
+    "product_id": 2,
+    "quantity": 4
+  }
+
+Пример ответа:
+201 Created
+Content-Type: application/json
+{
+  "id": 5,
+  "message": "Заказ создан"
+}
+
+4. Обновление данных товара
+
+Метод: PUT
+Путь: /products/3
+Тело запроса:
+  {
+    "name": "Клавиатура",
+    "price": 4500,
+    "quantity": 33
+  }
+Успешный статус: 200 OK
+Ошибки:
+404 Not Found
+400 Bad request
+500 Internal Server Error
+Пример запроса:
+PUT /products/3
+Content-Type: application/json
+  {
+    "name": "Клавиатура",
+    "price": 4500,
+    "quantity": 33
+  }
+Пример ответа:
+200 OK
+Content-Type: application/json
+  {
+    "name": "Клавиатура",
+    "price": 4500,
+    "quantity": 33
+  }
+
+5. Удаление товара
+
+Метод: DELETE
+Путь: /products/3
+Успешный статус: 200 OK
+Ошибки:
+400 Bad Request
+404 Not Found
+500 Internal Server Error
+
+Пример запроса:
+DELETE /products/3 HTTP/1.1
+Accept: application/json
+
+Пример ответа:
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "message": "Товар удалён"
+}
+
+
+
+6. Получение заказов пользователя
+
+Метод: GET
+Путь: /users/3/orders
+Успешный статус: 200 OK
+
+Ошибки:
+400 Bad Request
+404 Not Found
+500 Internal Server Error
+
+Пример запроса:
+GET /users/3/orders HTTP/1.1
+Host: sfmshop.com
+Accept: application/json
+
+Пример ответа:
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+[
+  {
+    "id": 1,
+    "user_id": 3,
+    "product_id": 2,
+    "quantity": 4,
+    "total": 6000
+  },
+  {
+    "id": 2,
+    "user_id": 3,
+    "product_id": 5,
+    "quantity": 1,
+    "total": 4500
+  }
+]

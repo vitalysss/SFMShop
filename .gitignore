@@ -1,23 +1,38 @@
-# Скомпилированные Python файлы
-*.pyc
-
-# Папка с кэшем Python
+# Python
 __pycache__/
+*.py[cod]
+*.pyo
 
-# Файлы с переменными окружения
-.env
-
-# Виртуальное окружение Python
+# Virtual environments
 venv/
+.venv/
 
-# Файлы логов
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Logs
 *.log
 
-# Папка с собранными пакетами
+# Build artifacts
 dist/
-
-# Папка со сборкой проекта
 build/
+*.egg-info/
 
-# Настройки IDE PyCharm / IntelliJ
-.idea/
+# Test and coverage cache
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Type checkers and linters
+.mypy_cache/
+.ruff_cache/

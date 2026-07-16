@@ -1,45 +1,34 @@
-from src.models.exceptions import NegativePriceError, InsufficientStockError, ValidationError
+from src.services.discounts import DiscountStrategy
+from src.models.descriptors import PositiveNumber, CachedProperty
+from src.models.metaclasses import ModelMeta
+from src.models.mixins import LoggableMixin, ValidatableMixin, SerializableMixin
 
 
-class Product:
-    def __init__(self, name, price, quantity):
+class Product(LoggableMixin, ValidatableMixin, SerializableMixin, metaclass=ModelMeta):
+    price = PositiveNumber("_price")
+    quantity = PositiveNumber("_quantity")
+
+    def __init__(self, name: str, price: float, quantity: int):
         self.name = name
-        self.set_price(price)
+        self.price = price
         self.quantity = quantity
 
-    def sell(self, amount):
-        if self.quantity < amount:
-            raise InsufficientStockError(
-                f"Товара недостаточно. На складе: {self.quantity}, требуется {amount}"
-            )
+        self.validate()
+        self.log(f"Создан товар: {self.name}")
 
-        self.quantity -= amount
+    def validate(self):
+        if not self.name:
+            raise ValueError("Название товара не может быть пустым")
+        return True
 
-    def set_price(self, price):
-        if price < 0:
-            raise ValidationError("Цена не может быть отрицательной")
-        self.price = price
+    def calculate_price(self, discount: DiscountStrategy) -> float:
+        return discount.apply(self.price)
 
-    def get_total_price(self):
+    @CachedProperty
+    def total_value(self):
+        print("Вычисление")
         return self.price * self.quantity
 
-    def get_category(self):
-        if self.price < 1500:
-            return "Бюджетный"
-        return "Премиальный"
-
-    def __str__(self):
-        return f"Товар: {self.name}, Цена: {self.price} руб. Количество: {self.quantity} "
-
-    def __repr__(self):
-        return f"Product('{self.name}', {self.price}, {self.quantity})"
-
-    def __lt__(self, other):
-        if not isinstance(other, Product):
-            return NotImplemented
-        return self.price < other.price
-
-    def __eq__(self, other):
-        if not isinstance(other, Product):
-            return False
-        return self.name == other.name and self.price == other.price
+    @classmethod
+    def from_dict(cls, data):
+        return cls(name=data["name"], price=data["price"], quantity=data["quantity"])

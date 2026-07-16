@@ -1,12 +1,17 @@
-from src.models.exceptions import ValidationError
+from src.models.metaclasses import ModelMeta
+from src.models.descriptors import PositiveNumber
 
 
-class User:
-    def __init__(self, name, email):
+class User(metaclass=ModelMeta):
+    user_id = PositiveNumber("_user_id")
+    age = PositiveNumber("_age")
+    balance = PositiveNumber("_balance")
+
+    def __init__(self, user_id, name, email, age, balance):
+        self.user_id = user_id
         self.name = name
-        self.set_email(email)
-
-    def set_email(self, email):
-        if '@' not in email:
-            raise ValidationError('Неверный формат email')
-        self._email = email
+        self.email = email
+        self.age = age
+        self.balance = balance
+        self.orders = []
+        self.is_active = True

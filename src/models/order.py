@@ -1,28 +1,47 @@
-from src.models.exceptions import InvalidOrderError, BusinessLogicError
-from src.models.product import Product
+from src.models.descriptors import PositiveNumber
 
-class Order:
-    def __init__(self, user,products):
+from src.models.metaclasses import ModelMeta
+from src.models.mixins import LoggableMixin, SerializableMixin
+
+
+class Order(LoggableMixin, SerializableMixin, metaclass=ModelMeta):
+    order_id = PositiveNumber("_order_id")
+
+    def __init__(self, order_id, user, products):
         self.user = user
-        self.products = []
-        if not products:
-            raise BusinessLogicError("Заказ не может быть пустым")
-        for product in products:
-            self.add_product(product)
+        self.products = products
+        self.order_id = order_id
+        self.log(f"Создан заказ: {order_id}")
 
-    def add_product(self, product):
-        if not isinstance(product, Product):
-            raise InvalidOrderError("Товар должен быть объектом класса Product")
-        self.products.append(product)
-
-
-
-    def calculate_total(self):
-        total = 0
-        for product in self.products:
-            total += product.get_total_price()
-        return total
+    def __eq__(self, other):
+        if not isinstance(other, Order):
+            return False
+        return self.order_id == other.order_id
 
     def __str__(self):
-        total = self.calculate_total()
-        return f"Заказ пользователя {self.user.name} на сумму {total} руб."
+        return f"Заказ {self.order_id} пользователя {self.user.name}"
+
+    def __len__(self):
+        return len(self.products)
+
+    def __contains__(self, product):
+        if isinstance(product, str):
+            return any(
+                item == product if isinstance(item, str) else item.name == product
+                for item in self.products
+            )
+
+        return product in self.products
+
+    def __add__(self, other):
+        if not isinstance(other, Order):
+            return NotImplemented
+
+        new_products = self.products + other.products
+        return Order(self.order_id, self.user, new_products)
+
+    def __lt__(self, other):
+        if not isinstance(other, Order):
+            return NotImplemented
+
+        return self.order_id < other.order_id
