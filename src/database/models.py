@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import String, Numeric, DateTime, ForeignKey, Text
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -51,6 +51,13 @@ class Order(Base):
     items: Mapped[list["OrderItem"]] = relationship(
         back_populates="order", cascade="all, delete-orphan"
     )
+
+    def calculate_total(self):
+        total = Decimal("0.00")
+        for item in self.items:
+            total += item.price * item.quantity
+
+        return total
 
 
 class OrderItem(Base):

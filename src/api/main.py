@@ -1,226 +1,62 @@
-from decimal import Decimal
+import logging
+from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi import HTTPException
-from fastapi.testclient import TestClient
-from pydantic import BaseModel
-from pydantic import Field
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 
-from src.database.queries_orm import create_order
-from src.database.queries_orm import delete_product
-from src.database.queries_orm import update_product
-from src.services.cache_service import get_cached_product
-from src.services.cache_service import get_cached_products
-from src.services.cache_service import invalidate_product_cache
-from src.services.log_service import save_log
+from src.api.lifespan import lifespan
+from src.api.middleware import log_requests
+from src.api.routes import auth, external
+from src.api.routes.orders import router as orders_router
+from src.api.routes.products import router as products_router
+from src.api.routes.versioned_products import v1_router, v2_router
+from src.config import DEBUG
 
-app = FastAPI()
+logging.basicConfig(level=logging.INFO)
 
-def invalidate_cache_safely(product_id: int) -> None:
-    try:
-        invalidate_product_cache(product_id)
-    except Exception as e:
-        print("Не удалось очистить Redis-кэш:", e)
-
-class OrderCreate(BaseModel):
-    user_id: int
-    product_id: int
-    quantity: int = Field(
-        gt=0,
-    )
-
-
-class ProductUpdate(BaseModel):
-    name: str
-    price: Decimal = Field(
-        gt=0,
-    )
-    stock: int = Field(
-        ge=0,
-    )
-
-
-@app.get("/products")
-def get_products(
-    limit: int = 10,
-    offset: int = 0,
-):
-    products = get_cached_products()
-
-    return {
-        "total": len(products),
-        "limit": limit,
-        "offset": offset,
-        "products": products[offset : offset + limit],
-    }
-
-
-@app.get("/products/{product_id}")
-def get_product_endpoint(
-    product_id: int,
-):
-    product = get_cached_product(product_id)
-
-    if product is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Товар не найден",
-        )
-
-    return product
-
-
-@app.post(
-    "/orders",
-    status_code=201,
+app = FastAPI(
+    title="SFMShop API",
+    description=(
+        "Backend интернет-магазина: каталог, JWT-аутентификация, "
+        "заказы и фоновые задачи."
+    ),
+    version="1.0.0",
+    lifespan=lifespan,
+    debug=DEBUG,
 )
-def create_new_order(
-    order_data: OrderCreate,
-):
-    order = create_order(
-        user_id=order_data.user_id,
-        product_id=order_data.product_id,
-        quantity=order_data.quantity,
-    )
+app.middleware("http")(log_requests)
 
-    if order is None:
-        write_log_safely(
-            {
-                "event_type": "order_failed",
-                "message": "Не удалось создать заказ",
-                "status_code": 400,
-                "user_id": order_data.user_id,
-                "product_id": order_data.product_id,
-                "quantity": order_data.quantity,
-            }
-        )
-        raise HTTPException(
-            status_code=400,
-            detail=(
-                "Не удалось создать заказ. "
-                "Проверьте пользователя, товар, "
-                "остаток и баланс."
-            ),
-        )
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-    invalidate_cache_safely(order_data.product_id)
-
-    write_log_safely(
-        {
-            "event_type": "order_created",
-            "message": f"Заказ создан {order.id}",
-            "status_code": 201,
-            "user_id": order.user_id,
-            "product_id": order_data.product_id,
-            "quantity": order_data.quantity,
-        }
-    )
-
-    return {
-        "id": order.id,
-        "user_id": order.user_id,
-        "total": str(order.total),
-        "status": order.status,
-        "quantity": order_data.quantity,
-        "product_id": order_data.product_id,
-    }
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(v1_router)
+app.include_router(v2_router)
+app.include_router(products_router)
+app.include_router(orders_router)
+app.include_router(
+    external.router,
+    prefix="/api/v1",
+)
 
 
-@app.put("/products/{product_id}")
-def update_product_endpoint(
-    product_id: int,
-    product_data: ProductUpdate,
-):
-    product = update_product(
-        product_id=product_id,
-        name=product_data.name,
-        price=product_data.price,
-        stock=product_data.stock,
-    )
+@app.get("/admin", include_in_schema=False)
+async def admin_page():
+    path = Path(__file__).resolve().parents[2] / "templates" / "admin.html"
 
-    if product is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Товар не найден",
-        )
-
-    invalidate_cache_safely(product_id)
-
-    return {
-        "id": product.id,
-        "name": product.name,
-        "price": str(product.price),
-        "stock": product.stock,
-    }
-
-
-@app.delete("/products/{product_id}")
-def delete_product_endpoint(
-    product_id: int,
-):
-    deleted = delete_product(product_id)
-
-    if not deleted:
-        raise HTTPException(
-            status_code=404,
-            detail="Товар не найден",
-        )
-
-    invalidate_cache_safely(product_id)
-
-    return {
-        "message": "Товар удалён",
-        "id": product_id,
-    }
-
-
-def test_api():
-    with TestClient(app) as client:
-        response = client.get("/products")
-        assert response.status_code == 200
-        print("GET /products: OK")
-
-        response = client.get("/products?limit=5&offset=0")
-        assert response.status_code == 200
-
-        data = response.json()
-
-        assert "total" in data
-        assert "products" in data
-
-        print("GET /products с пагинацией: OK")
-
-        response = client.get("/products/999999")
-        assert response.status_code == 404
-
-        print("GET отсутствующего товара: OK")
-
-        response = client.put(
-            "/products/999999",
-            json={
-                "name": "Test",
-                "price": "1000.00",
-                "stock": 100,
-            },
-        )
-        assert response.status_code == 404
-
-        print("PUT отсутствующего товара: OK")
-
-        response = client.delete("/products/999999")
-        assert response.status_code == 404
-
-        print("DELETE отсутствующего товара: OK")
-
-        print("Все тесты выполнены")
-
-
-def write_log_safely(log_data):
-    try:
-        save_log(log_data)
-    except Exception as e:
-        print("Не удалось записать лог для MongoDB", e)
+    return FileResponse(path)
 
 
 if __name__ == "__main__":
-    test_api()
+    from src.api.smoke_tests import test_api
+
+    test_api(app)

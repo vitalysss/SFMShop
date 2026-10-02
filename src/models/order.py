@@ -1,5 +1,4 @@
 from src.models.descriptors import PositiveNumber
-
 from src.models.metaclasses import ModelMeta
 from src.models.mixins import LoggableMixin, SerializableMixin
 

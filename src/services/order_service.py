@@ -1,5 +1,5 @@
-from src.services.order_validator import OrderValidator
 from src.services.order_calculator import OrderCalculator
+from src.services.order_validator import OrderValidator
 
 
 class OrderService:
@@ -118,8 +118,6 @@ def process_order(order_data):
 
     notify_user(order_data["user_id"], order_id, final_total)
 
-    print(
-        f"Заказ {order_id} обработан: пользователь {order_data['user_id']}, сумма {final_total}"
-    )
+    print(f"Заказ {order_id} обработан: пользователь {order_data['user_id']}, сумма {final_total}")
 
     return {"order_id": order_id, "total": final_total, "discount": discount}

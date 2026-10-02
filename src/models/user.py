@@ -1,5 +1,5 @@
-from src.models.metaclasses import ModelMeta
 from src.models.descriptors import PositiveNumber
+from src.models.metaclasses import ModelMeta
 
 
 class User(metaclass=ModelMeta):

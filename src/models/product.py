@@ -1,7 +1,7 @@
-from src.services.discounts import DiscountStrategy
-from src.models.descriptors import PositiveNumber, CachedProperty
+from src.models.descriptors import CachedProperty, PositiveNumber
 from src.models.metaclasses import ModelMeta
-from src.models.mixins import LoggableMixin, ValidatableMixin, SerializableMixin
+from src.models.mixins import LoggableMixin, SerializableMixin, ValidatableMixin
+from src.services.discounts import DiscountStrategy
 
 
 class Product(LoggableMixin, ValidatableMixin, SerializableMixin, metaclass=ModelMeta):

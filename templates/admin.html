@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+    <title>SFMShop - Админ-панель</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+        }
+
+        input {
+            padding: 8px;
+        }
+
+        button {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #message,
+        #loginMessage {
+            margin: 15px 0;
+        }
+
+        #productsList {
+            margin-top: 20px;
+        }
+
+        .pagination {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Админ-панель SFMShop</h1>
+
+    <h2>Авторизация</h2>
+
+    <form id="loginForm">
+        <label for="email">
+            Email:
+        </label>
+
+        <input
+            type="email"
+            id="email"
+            required
+        >
+
+        <label for="password">
+            Пароль:
+        </label>
+
+        <input
+            type="password"
+            id="password"
+            required
+        >
+
+        <button type="submit">
+            Войти
+        </button>
+    </form>
+
+    <div id="loginMessage"></div>
+
+    <h2>Создание товара</h2>
+
+    <form id="productForm">
+        <label for="name">
+            Название товара:
+        </label>
+
+        <input
+            type="text"
+            id="name"
+            minlength="2"
+            maxlength="100"
+            required
+        >
+
+        <label for="price">
+            Цена:
+        </label>
+
+        <input
+            type="number"
+            id="price"
+            step="0.01"
+            min="0.01"
+            required
+        >
+
+        <label for="stock">
+            Количество на складе:
+        </label>
+
+        <input
+            type="number"
+            id="stock"
+            min="0"
+            required
+        >
+
+        <button type="submit">
+            Добавить товар
+        </button>
+    </form>
+
+    <div id="message"></div>
+
+    <h2>Список товаров</h2>
+
+    <button
+        id="getProductsBtn"
+        type="button"
+    >
+        Получить список товаров
+    </button>
+
+    <div id="productsList"></div>
+
+    <div class="pagination">
+        <button
+            id="prevPageBtn"
+            type="button"
+            disabled
+        >
+            ← Назад
+        </button>
+
+        <span id="pageInfo">
+            Страница 1
+        </span>
+
+        <button
+            id="nextPageBtn"
+            type="button"
+            disabled
+        >
+            Вперёд →
+        </button>
+    </div>
+
+    <script>
+        let token = null;
+
+        const limit = 10;
+        let offset = 0;
+
+
+        document
+            .getElementById("loginForm")
+            .addEventListener(
+                "submit",
+                async function (event) {
+                    event.preventDefault();
+
+                    const loginMessage =
+                        document.getElementById(
+                            "loginMessage"
+                        );
+
+                    const email =
+                        document.getElementById(
+                            "email"
+                        ).value;
+
+                    const password =
+                        document.getElementById(
+                            "password"
+                        ).value;
+
+                    try {
+                        const response = await fetch(
+                            "/api/v1/login",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type":
+                                        "application/json"
+                                },
+                                body: JSON.stringify({
+                                    email: email,
+                                    password: password
+                                })
+                            }
+                        );
+
+                        const data =
+                            await response.json();
+
+                        if (!response.ok) {
+                            loginMessage.textContent =
+                                "Ошибка авторизации";
+                            return;
+                        }
+
+                        token = data.access_token;
+
+                        loginMessage.textContent =
+                            "Авторизация успешна";
+                    } catch (error) {
+                        loginMessage.textContent =
+                            `Ошибка: ${error.message}`;
+                    }
+                }
+            );
+
+
+        document
+            .getElementById("productForm")
+            .addEventListener(
+                "submit",
+                async function (event) {
+                    event.preventDefault();
+
+                    const messageDiv =
+                        document.getElementById(
+                            "message"
+                        );
+
+                    if (!token) {
+                        messageDiv.textContent =
+                            "Сначала авторизуйтесь";
+                        return;
+                    }
+
+                    const formData = {
+                        name:
+                            document
+                                .getElementById(
+                                    "name"
+                                )
+                                .value,
+
+                        price:
+                            parseFloat(
+                                document
+                                    .getElementById(
+                                        "price"
+                                    )
+                                    .value
+                            ),
+
+                        stock:
+                            parseInt(
+                                document
+                                    .getElementById(
+                                        "stock"
+                                    )
+                                    .value
+                            )
+                    };
+
+                    try {
+                        const response = await fetch(
+                            "/products",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type":
+                                        "application/json",
+
+                                    "Authorization":
+                                        `Bearer ${token}`
+                                },
+                                body:
+                                    JSON.stringify(
+                                        formData
+                                    )
+                            }
+                        );
+
+                        const data =
+                            await response.json();
+
+                        if (!response.ok) {
+                            messageDiv.textContent =
+                                "Ошибка создания товара";
+                            return;
+                        }
+
+                        messageDiv.textContent =
+                            `Товар создан. ID: ${data.id}`;
+
+                        document
+                            .getElementById(
+                                "productForm"
+                            )
+                            .reset();
+
+                        await loadProducts();
+
+                    } catch (error) {
+                        messageDiv.textContent =
+                            `Ошибка: ${error.message}`;
+                    }
+                }
+            );
+
+
+        async function loadProducts() {
+            const productsList =
+                document.getElementById(
+                    "productsList"
+                );
+
+            const pageInfo =
+                document.getElementById(
+                    "pageInfo"
+                );
+
+            const prevButton =
+                document.getElementById(
+                    "prevPageBtn"
+                );
+
+            const nextButton =
+                document.getElementById(
+                    "nextPageBtn"
+                );
+
+            if (!token) {
+                productsList.textContent =
+                    "Сначала авторизуйтесь";
+
+                return;
+            }
+
+            productsList.textContent = "";
+
+            try {
+                const response = await fetch(
+                    `/products?limit=${limit}&offset=${offset}`,
+                    {
+                        headers: {
+                            "Authorization":
+                                `Bearer ${token}`
+                        }
+                    }
+                );
+
+                const data =
+                    await response.json();
+
+                if (!response.ok) {
+                    productsList.textContent =
+                        "Ошибка получения товаров";
+                    return;
+                }
+
+                if (data.products.length === 0) {
+                    productsList.textContent =
+                        "На этой странице товаров нет";
+                }
+
+                for (
+                    const product
+                    of data.products
+                ) {
+                    const productItem =
+                        document.createElement(
+                            "p"
+                        );
+
+                    productItem.textContent =
+                        `${product.name} ` +
+                        `#${product.id} — ` +
+                        `${product.price} ₽ — ` +
+                        `остаток: ${product.stock}`;
+
+                    productsList.appendChild(
+                        productItem
+                    );
+                }
+
+                const currentPage =
+                    Math.floor(
+                        offset / limit
+                    ) + 1;
+
+                const totalPages =
+                    Math.max(
+                        1,
+                        Math.ceil(
+                            data.total / limit
+                        )
+                    );
+
+                pageInfo.textContent =
+                    `Страница ${currentPage} ` +
+                    `из ${totalPages}`;
+
+                prevButton.disabled =
+                    offset === 0;
+
+                nextButton.disabled =
+                    offset + limit >=
+                    data.total;
+
+            } catch (error) {
+                productsList.textContent =
+                    `Ошибка: ${error.message}`;
+            }
+        }
+
+
+        document
+            .getElementById(
+                "getProductsBtn"
+            )
+            .addEventListener(
+                "click",
+                async function () {
+                    offset = 0;
+
+                    await loadProducts();
+                }
+            );
+
+
+        document
+            .getElementById(
+                "nextPageBtn"
+            )
+            .addEventListener(
+                "click",
+                async function () {
+                    offset += limit;
+
+                    await loadProducts();
+                }
+            );
+
+
+        document
+            .getElementById(
+                "prevPageBtn"
+            )
+            .addEventListener(
+                "click",
+                async function () {
+                    offset = Math.max(
+                        0,
+                        offset - limit
+                    );
+
+                    await loadProducts();
+                }
+            );
+    </script>
+</body>
+</html>

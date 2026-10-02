@@ -1,0 +1,8 @@
+[run]
+omit =
+    src/api/router.py
+    src/api/smoke_tests.py
+
+[report]
+show_missing = True
+skip_covered = False

@@ -1,5 +1,5 @@
 from logging.config import fileConfig
-from src.database.connection_orm import primary_database_url
+from src.database.connection_orm import PRIMARY_DATABASE_URL
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
@@ -10,7 +10,7 @@ from alembic import context
 config = context.config
 config.set_main_option(
     "sqlalchemy.url",
-    primary_database_url,
+    PRIMARY_DATABASE_URL,
 )
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

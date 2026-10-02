@@ -1,8 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.exc import OperationalError
-from src.database.connection_orm import get_session
-from src.database.models import User, Product, Review, Order, OrderItem
 from sqlalchemy.orm import joinedload
+
+from src.database.connection_orm import get_session
+from src.database.models import Order, OrderItem, Product, Review, User
 
 
 def create_user(name, email, balance):
@@ -232,14 +233,12 @@ def create_order(user_id, product_id, quantity=1):
 
             user = session.execute(user_stmt).scalar_one_or_none()
 
-            if user is None:
-                return None
-
-            product_stmt = (
-                select(Product).where(Product.id == product_id).with_for_update()
-            )
+            product_stmt = select(Product).where(Product.id == product_id).with_for_update()
 
             product = session.execute(product_stmt).scalar_one_or_none()
+
+            if user is None:
+                return None
 
             if product is None:
                 return None

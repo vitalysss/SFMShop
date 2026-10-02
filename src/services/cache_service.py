@@ -1,24 +1,13 @@
-import redis
-import os
 import json
 from uuid import uuid4
+
+import redis
+
+from src.config import REDIS_URL
 from src.database.queries_orm import get_all_products, get_product
-from dotenv import load_dotenv
 
-load_dotenv()
-
-redis_client = redis.Redis(
-    host=os.getenv(
-        "REDIS_HOST",
-        "127.0.0.1",
-    ),
-    port=int(
-        os.getenv(
-            "REDIS_PORT",
-            "6379",
-        )
-    ),
-    db=0,
+redis_client = redis.Redis.from_url(
+    REDIS_URL,
     decode_responses=True,
 )
 
@@ -26,7 +15,10 @@ redis_client = redis.Redis(
 def get_cached_products():
     cache_key = "products:all"
 
-    cached = redis_client.get(cache_key)
+    try:
+        cached = redis_client.get(cache_key)
+    except redis.RedisError:
+        cached = None
 
     if cached:
         print("HIT")
@@ -35,7 +27,15 @@ def get_cached_products():
     print("MISS")
     products = get_all_products()
     products_data = [product_to_dict(product) for product in products]
-    redis_client.setex(cache_key, 3600, json.dumps(products_data))
+
+    try:
+        redis_client.setex(
+            cache_key,
+            3600,
+            json.dumps(products_data),
+        )
+    except redis.RedisError:
+        pass
 
     return products_data
 
@@ -50,13 +50,19 @@ def product_to_dict(product):
 
 
 def invalidate_products_cache():
-    redis_client.delete("products:all")
+    try:
+        redis_client.delete("products:all")
+    except redis.RedisError:
+        pass
 
 
 def get_cached_product(product_id):
     cache_key = f"product:{product_id}"
 
-    cached = redis_client.get(cache_key)
+    try:
+        cached = redis_client.get(cache_key)
+    except redis.RedisError:
+        cached = None
 
     if cached:
         print("HIT")
@@ -71,14 +77,26 @@ def get_cached_product(product_id):
 
     product_data = product_to_dict(product)
 
-    redis_client.setex(cache_key, 3600, json.dumps(product_data))
+    try:
+        redis_client.setex(
+            cache_key,
+            3600,
+            json.dumps(product_data),
+        )
+    except redis.RedisError:
+        pass
 
     return product_data
 
 
 def invalidate_product_cache(product_id):
-    redis_client.delete(f"product:{product_id}")
-    redis_client.delete("products:all")
+    try:
+        redis_client.delete(
+            f"product:{product_id}",
+        )
+        redis_client.delete("products:all")
+    except redis.RedisError:
+        pass
 
 
 def create_user_session(user_id):

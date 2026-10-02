@@ -1,5 +1,5 @@
 class ModelMeta(type):
-    _registry = {}
+    _registry: dict[type, type] = {}
 
     def __new__(cls, name, bases, attrs):
         def to_dict(self):
