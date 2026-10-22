@@ -49,14 +49,13 @@ app.include_router(
 )
 
 
+@app.get("/health", tags=["system"])
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.get("/admin", include_in_schema=False)
 async def admin_page():
     path = Path(__file__).resolve().parents[2] / "templates" / "admin.html"
 
     return FileResponse(path)
-
-
-if __name__ == "__main__":
-    from src.api.smoke_tests import test_api
-
-    test_api(app)

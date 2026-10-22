@@ -17,7 +17,7 @@ logs_collection = db["logs"]
 
 
 class LogService:
-    def __init__(self, log_file: str = "app.log"):
+    def __init__(self, log_file: str | None = None):
         self.logger = logging.getLogger("sfmshop")
         self.logger.setLevel(logging.DEBUG)
         self.logger.propagate = False
@@ -25,14 +25,18 @@ class LogService:
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
         if not self.logger.handlers:
-            file_handler = logging.FileHandler(log_file, encoding="utf-8")
-            file_handler.setFormatter(formatter)
-
             console_handler = logging.StreamHandler()
             console_handler.setFormatter(formatter)
-
-            self.logger.addHandler(file_handler)
             self.logger.addHandler(console_handler)
+
+            configured_log_file = log_file or os.getenv("LOG_FILE")
+            if configured_log_file:
+                file_handler = logging.FileHandler(
+                    configured_log_file,
+                    encoding="utf-8",
+                )
+                file_handler.setFormatter(formatter)
+                self.logger.addHandler(file_handler)
 
     def debug(self, message: str, *args, **kwargs):
         self.logger.debug(message, *args, **kwargs)

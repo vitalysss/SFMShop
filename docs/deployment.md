@@ -115,3 +115,17 @@ http://localhost:8000/docs
 Панель управления RabbitMQ:
 
 ```text
+http://localhost:15672
+```
+
+Проверка состояния API:
+
+```text
+http://localhost:8000/health
+```
+
+Остановка контейнеров:
+
+```powershell
+docker compose -f docker/docker-compose.yml down
+```

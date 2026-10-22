@@ -22,6 +22,13 @@ app.dependency_overrides[get_current_user] = override_current_user
 client = TestClient(app)
 
 
+def test_health_check():
+    response = client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
 @patch("src.api.routes.products.get_cached_products")
 def test_get_products(mock_get_cached):
     mock_get_cached.return_value = [

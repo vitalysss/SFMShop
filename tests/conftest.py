@@ -1,6 +1,5 @@
 import os
 
-
 TEST_ENV = {
     "SECRET_KEY": "test-secret-key",
     "DB_USER": "postgres",

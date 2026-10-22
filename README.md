@@ -1,6 +1,8 @@
 # SFMShop
 
 [![CI](https://github.com/vitalysss/SFMShop/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/vitalysss/SFMShop/actions/workflows/ci-cd.yml)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.136-009688?logo=fastapi&logoColor=white)
 
 Учебный backend интернет-магазина на FastAPI. Проект показывает полный путь заказа: от JWT-аутентификации и проверки остатков до транзакционного списания средств, сброса кэша и отправки фоновых задач в RabbitMQ.
 
@@ -50,6 +52,7 @@ docker compose --env-file .env -f docker/docker-compose.yml up --build
 
 - Swagger UI: <http://localhost:8000/docs>
 - API: <http://localhost:8000>
+- Health check: <http://localhost:8000/health>
 - RabbitMQ Management: <http://localhost:15672>
 
 Остановка контейнеров:
@@ -107,7 +110,7 @@ python -m pytest tests -q \
   --cov-fail-under=81
 ```
 
-Текущий результат: **79 тестов проходят**, покрытие выбранных прикладных модулей — **около 85%**. Тесты используют фикстуры, параметризацию, моки, `AsyncMock`, временные файлы и подмену зависимостей FastAPI.
+Текущий результат: **80 тестов проходят**, покрытие выбранных прикладных модулей — **около 85%**. Тесты используют фикстуры, параметризацию, моки, `AsyncMock`, временные файлы и подмену зависимостей FastAPI.
 
 GitHub Actions при каждом push и pull request проверяет Ruff, mypy, тесты и минимальный порог покрытия 81%.
 
